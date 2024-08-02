@@ -1,3 +1,22 @@
+CREATE TABLE users (
+  username VARCHAR(25) PRIMARY KEY,
+  password TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT NOT NULL
+    CHECK (position('@' IN email) > 1),
+  is_admin BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+INSERT INTO users (username, password, first_name, last_name, email, is_admin)
+VALUES ('admin',
+        '$2b$12$m0R/pEMYv41EEmcgPG3VWOLYRp8HUM.IyOl2tj4PRx3C2lEA1TkvG',
+        'Admin',
+        'Admin',
+        'admin@admin.com',
+        TRUE);
+
+
 CREATE TABLE camps (
   id SERIAL PRIMARY KEY,
   location TEXT UNIQUE NOT NULL,
