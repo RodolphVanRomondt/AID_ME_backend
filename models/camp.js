@@ -66,6 +66,12 @@ class Camp{
 
         if (!camp) throw new NotFoundError(`No camp with ID ${id}`);
 
+        const { rows } = await db.query(
+            `SELECT * FROM families 
+            WHERE camp_id = $1`, [id]);
+        
+        camp.families = rows.map(e => e.id);
+
         return camp;
     }
 

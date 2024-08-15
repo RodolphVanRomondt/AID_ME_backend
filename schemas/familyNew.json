@@ -1,0 +1,20 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://our.family.com/familyNew.schema.json",
+    "type": "object",
+    "properties": {
+        "camp_id": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "head": {
+            "type": "integer",
+            "minimum": 1
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "camp_id",
+        "head"
+    ]
+}

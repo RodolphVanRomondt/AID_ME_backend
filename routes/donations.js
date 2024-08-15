@@ -31,8 +31,6 @@ router.post("/", ensureAdmin, async function (req, res, next) {
             throw new BadRequestError(errs);
         }
 
-        console.log(req.body);
-
         const donation = await Donation.create(req.body);
         return res.status(201).json({
             donation: {

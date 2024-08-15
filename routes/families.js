@@ -1,6 +1,6 @@
 "use strict";
 
-/** Routes for camps. */
+/** Routes for families. */
 
 const jsonschema = require("jsonschema");
 const express = require("express");
@@ -8,31 +8,33 @@ const express = require("express");
 const { BadRequestError } = require("../expressError");
 const { ensureAdmin } = require("../middleware/auth");
 const Family = require("../models/family");
+const Household = require("../models/household");
+const Distribution = require("../models/distribution");
 
-const campUpdateSchema = require("../schemas/campUpdate.json");
-const campNewSchema = require("../schemas/campNew.json");
+const familyUpdateSchema = require("../schemas/familyUpdate.json");
+const familyNewSchema = require("../schemas/familyNew.json");
 
 const router = new express.Router();
 
 
-/** POST / { camp } =>  { camp }
+/** POST / { family } =>  { family }
  *
- * person should be {location, city, country}
+ * family should be {camp_id, head}
  *
- * Returns {id, location, city, country}
+ * Returns {id, camp_id, head}
  *
  * Authorization required: admin
  */
 router.post("/", ensureAdmin, async function (req, res, next) {
     try {
-        const validator = jsonschema.validate(req.body, campNewSchema);
+        const validator = jsonschema.validate(req.body, familyNewSchema);
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
             throw new BadRequestError(errs);
         }
 
-        const camp = await Family.create(req.body);
-        return res.status(201).json({ camp });
+        const family = await Family.create(req.body);
+        return res.status(201).json({ family });
     } catch (err) {
         return next(err);
     }
@@ -40,7 +42,7 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 
 
 /** GET /  =>
- *   { camps: [ {id, location, city, country}, ...] }
+ *   { families: [ {id, camp_id, head}, ...] }
  *
  * Authorization required: admin
  */
@@ -55,9 +57,14 @@ router.get("/", ensureAdmin, async function (req, res, next) {
 });
 
 
-/** GET /[id]  =>  { camp }
+router.get("/household", ensureAdmin, async function (req, res, next) {
+    const householdRes = await Household.all();
+    return res.json({ householdAll: householdRes });
+});
+
+/** GET /[id]  =>  { family }
  *
- *  Camp is {id, location, city, country}
+ * Family is {id, camp_id, head}
  *
  * Authorization required: admin
  */
@@ -71,19 +78,19 @@ router.get("/:id", ensureAdmin, async function (req, res, next) {
 });
 
 
-/** PATCH /[id] { fld1, fld2, ... } => { camp }
+/** PATCH /[id] { fld1, fld2, ... } => { family }
  *
- * Patches camp data.
+ * Patches family data.
  *
- * fields can be: {location, city, country}
+ * fields can be: {camp_id, head}
  *
- * Returns {id, location, city, country}
+ * Returns {id, camp_id, head}
  *
  * Authorization required: admin
  */
 router.patch("/:id", ensureAdmin, async function (req, res, next) {
     try {
-        const validator = jsonschema.validate(req.body, campUpdateSchema);
+        const validator = jsonschema.validate(req.body, familyUpdateSchema);
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
             throw new BadRequestError(errs);
@@ -107,6 +114,68 @@ router.delete("/:id", ensureAdmin, async function (req, res, next) {
         return res.json({ deleted: req.params.id });
     } catch (err) {
         return next(err);
+    }
+});
+
+
+/* CREATE /[fID]/people/[pID] => { household }
+*
+* Household is { family_id, person_id }
+*
+* Authorization required: admin
+*/
+router.post("/:fID/people/:pID", ensureAdmin, async function (req, res, next) {
+    try {
+        const { fID, pID } = req.params;
+        const household = await Household.create(+fID, +pID);
+        return res.json({ household });
+    } catch (e) {
+        return next(e);
+    }
+});
+
+
+/** GET /[id]/people  =>  { household }
+ *
+ * Household is [{family_id, person_id}, ...]
+ *
+ * Authorization required: admin
+ */
+router.get("/:id/people", ensureAdmin, async function (req, res, next) {
+    try {
+        const { id } = req.params;
+        const household = await Household.get(+id);
+        return res.json({ household });
+    } catch (e) {
+        return next(e);
+    }
+});
+
+
+/* GET /[id]/donations => { donations }
+*
+* Donations is [{id, start_date, end_date, target, description}, ...]
+*
+* Authorization required: admin
+*/
+router.get("/:id/donations", ensureAdmin, async function (req, res, next) {
+    try {
+        const { id } = req.params;
+        const donations = await Family.getAllNewDonations(+id);
+        return res.json({donations});
+    } catch (e) {
+        return next(e);
+    }
+});
+
+
+router.post("/:fID/donations/:dID", ensureAdmin, async function (req, res, next) {
+    try {
+        const { fID, dID } = req.params;
+        const distribution = await Distribution.create({ family_id: +fID, donation_id: +dID });
+        return res.json({distribution});
+    } catch (e) {
+        return next(e);
     }
 });
 

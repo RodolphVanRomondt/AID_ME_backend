@@ -12,6 +12,8 @@ class Family {
      *
      * data should be { camp_id, head }
      *
+     * Throws BadRequestError if input data combination already exist or not found in respective tables.
+     * 
      * Returns { id, camp_id, head }
      **/
     static async create(data) {
@@ -22,7 +24,10 @@ class Family {
             [
                 data.camp_id,
                 data.head]);
+
         let family = result.rows[0];
+
+        if (!family) throw new BadRequestError();
 
         return family;
     }
@@ -126,6 +131,19 @@ class Family {
         const family = result.rows[0];
 
         if (!family) throw new NotFoundError(`No family with ID ${id}`);
+    }
+
+
+    /* Get all donations for a family not already enrolled for. */
+    static async getAllNewDonations(id) {
+        const result = await db.query(
+            `SELECT * FROM donations
+            WHERE id NOT IN
+            (SELECT donation_id FROM distributions WHERE family_id = $1)`, [id]);
+        
+        const donations = result.rows;
+        
+        return donations;
     }
 }
 

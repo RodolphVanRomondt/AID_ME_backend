@@ -7,10 +7,12 @@ https://aid-me-backend.onrender.com
 ```
 
 ## Different Routes
-- `/camps`
-- `/people`
-- `/families`
-- `/donations`
+- `/camps/[id]`
+- `/people/[id]`
+- `/families/[id]`
+- `/families/[id]/people`
+- `/families/[fID]/people/[pID]`
+- `/donations/[id]`
 - `/auth/token`
 
 ## Token

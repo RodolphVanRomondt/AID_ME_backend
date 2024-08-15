@@ -5,29 +5,31 @@ const { NotFoundError, BadRequestError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
 
 
-/** Related functions for donations. */
-class Donation {
+/** Related functions for distributions. */
+class Distribution {
 
-    /** Create a donation (from data), update db, return new donation data.
-     *
-     * data should be { start_date, end_date, target, description }
-     *
-     * Returns { id, start_date, end_date, target, description }
-     **/
+    /** Create a distribution (from data), update db, return new distribution data.
+    *
+    * data should be { donation_id, family_id, [receive] }
+    *
+    * Returns { donation_id, family_id, receive }
+    *
+    * Throws BadRequestError if key is not present in respective table or already exists.
+    */
     static async create(data) {
-        console.log(data);
-        const result = await db.query(
-            `INSERT INTO donations (start_date, end_date, target, description)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id, start_date, end_date, target, description`,
-            [
-                data.start_date,
-                data.end_date,
-                data.target,
-                data.description]);
-        let donation = result.rows[0];
-
-        return donation;
+        try {
+            const result = await db.query(
+                `INSERT INTO distributions (donation_id, family_id)
+                VALUES ($1, $2)
+                RETURNING donation_id, family_id, receive`,
+                [
+                    data.donation_id,
+                    data.family_id
+                ]);
+            return result.rows[0];
+        } catch (e) {
+            throw new BadRequestError("Duplicate/Not Present");
+        }
     }
 
 
@@ -59,12 +61,12 @@ class Donation {
 
         if (!donation) throw new NotFoundError(`No donation with ID ${id}`);
 
-        const {rows} = await db.query(
+        const { rows } = await db.query(
             `SELECT family_id, receive FROM distributions WHERE donation_id = $1`,
             [id]
         );
 
-        donation.family = rows.map(e => ({id: e.family_id, receive: e.receive}));
+        donation.family = rows.map(e => ({ id: e.family_id, receive: e.receive }));
 
         return donation;
     }
@@ -100,21 +102,22 @@ class Donation {
     }
 
 
-    /** Delete given donation from database; returns undefined.
+    /** Delete given distribution from database; returns undefined.
      *
-     * Throws NotFoundError if donation not found.
+     * Throws NotFoundError if distribution not found.
      **/
-    static async remove(id) {
+    static async remove(fID, dID) {
         const result = await db.query(
             `DELETE
-           FROM donations
-           WHERE id = $1
-           RETURNING id`, [id]);
-        const donation = result.rows[0];
+            FROM distributions
+            WHERE donation_id = $1
+            AND family_id = $2
+            RETURNING id`, [fID, dID]);
+        const distribution = result.rows[0];
 
-        if (!donation) throw new NotFoundError(`No donation with ID ${id}`);
+        if (!distribution) throw new NotFoundError(`No distribution with family ID ${fID} and donation ID ${dID}`);
     }
 }
 
 
-module.exports = Donation;
+module.exports = Distribution;
