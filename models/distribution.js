@@ -72,33 +72,25 @@ class Distribution {
     }
 
 
-    /** Update donation data with `data`.
+    /** Update distribution.
      *
-     * This is a "partial update" --- it's fine if data doesn't contain
-     * all the fields; this only changes provided ones.
-     *
-     * Data can include: { start_date, end_date, target, description }
-     *
-     * Returns { id, start_date, end_date, target, description }
+     * Returns { donation_id, family_id, receive }
      *
      * Throws NotFoundError if not found.
      */
-    static async update(id, data) {
-        const { setCols, values } = sqlForPartialUpdate(
-            data,
-            {});
-        const idVarIdx = "$" + (values.length + 1);
+    static async update(data) {
+        const result = await db.query(`UPDATE distributions 
+                      SET receive = true
+                      WHERE donation_id = $1 AND family_id = $2
+                      RETURNING donation_id, family_id, receive`, [data.dID, data.fID]);
 
-        const querySql = `UPDATE donations 
-                      SET ${setCols} 
-                      WHERE id = ${idVarIdx} 
-                      RETURNING id, start_date, end_date, target, description`;
-        const result = await db.query(querySql, [...values, id]);
-        const donation = result.rows[0];
+        const distribution = result.rows[0];
 
-        if (!donation) throw new NotFoundError(`No donation with ID ${id}`);
+        if (!distribution) throw new NotFoundError(
+            `No distribution with donation ID ${dID} and family ID ${fID}`
+        );
 
-        return donation;
+        return distribution;
     }
 
 

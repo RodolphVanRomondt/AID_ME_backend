@@ -162,18 +162,44 @@ router.get("/:id/donations", ensureAdmin, async function (req, res, next) {
     try {
         const { id } = req.params;
         const donations = await Family.getAllNewDonations(+id);
-        return res.json({donations});
+        return res.json({ donations });
     } catch (e) {
         return next(e);
     }
 });
 
 
+/* CREATE /[fID]/donations/[dID] => { distibution }
+*
+* Distribution is { donation_id, family_id, receive }
+*
+* Authorization required: admin
+*/
 router.post("/:fID/donations/:dID", ensureAdmin, async function (req, res, next) {
     try {
         const { fID, dID } = req.params;
         const distribution = await Distribution.create({ family_id: +fID, donation_id: +dID });
-        return res.json({distribution});
+        return res.json({ distribution });
+    } catch (e) {
+        return next(e);
+    }
+});
+
+
+
+/** PATCH /[fID]/donations/[dID] { fld1, fld2, ... } => { distribution }
+ *
+ * Marks receive as True.
+ *
+ * Returns {donation_id, family_id, receive}
+ *
+ * Authorization required: admin
+ */
+router.patch("/:fID/donations/:dID", ensureAdmin, async function (req, res, next) {
+    try {
+        const { fID, dID } = req.params;
+        const distribution = await Distribution.update({ dID: +dID, fID: +fID });
+        return res.json({ distribution });
     } catch (e) {
         return next(e);
     }
